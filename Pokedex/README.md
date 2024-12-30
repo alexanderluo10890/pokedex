@@ -1,0 +1,1 @@
+How to run file locally: uv run uvicorn main:app --reload
