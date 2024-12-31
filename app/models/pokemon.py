@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
 class Evolution(BaseModel):
@@ -16,9 +16,8 @@ class Pokemon(BaseModel):
     weaknesses: List[str]
     prev_evolution: Optional[List[Evolution]] = None
     next_evolution: Optional[List[Evolution]] = None
-
-    class Config:
-        exclude_none = True  # This makes exclude_none=True the default for model_dump
+    
+    model_config = ConfigDict(json_schema_extra={'exclude_none': True})
 
 class UpdatePokemon(BaseModel):
     num: Optional[str] = None
@@ -30,7 +29,5 @@ class UpdatePokemon(BaseModel):
     weaknesses: Optional[List[str]] = None
     prev_evolution: Optional[List[Evolution]] = None
     next_evolution: Optional[List[Evolution]] = None
-
-    class Config:
-        extra = 'forbid'  # Reject extra fields
-        exclude_none = True  # This makes exclude_none=True the default for model_dump
+    
+    model_config = ConfigDict(extra='forbid')
