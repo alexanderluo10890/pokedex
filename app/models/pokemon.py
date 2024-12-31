@@ -17,6 +17,9 @@ class Pokemon(BaseModel):
     prev_evolution: Optional[List[Evolution]] = None
     next_evolution: Optional[List[Evolution]] = None
 
+    class Config:
+        exclude_none = True  # This makes exclude_none=True the default for model_dump
+
 class UpdatePokemon(BaseModel):
     num: Optional[str] = None
     name: Optional[str] = None
@@ -30,3 +33,4 @@ class UpdatePokemon(BaseModel):
 
     class Config:
         extra = 'forbid'  # Reject extra fields
+        exclude_none = True  # This makes exclude_none=True the default for model_dump
