@@ -172,3 +172,136 @@ def test_empty_pokemon_list():
    - Remove test files
    - Reset mocked states
    - Clean up any test data
+
+
+## Integration Testing
+
+### What are Integration Tests?
+Integration tests verify that different components of the application work together correctly. Unlike unit tests that test components in isolation, integration tests examine the interactions between integrated components.
+
+### Characteristics of Good Integration Tests
+- **Realistic Environment**: Tests should mirror production setup
+- **End-to-End Flow**: Tests complete workflows, not just single operations
+- **Data Persistence**: Verifies data is correctly saved and retrieved
+- **Error Handling**: Tests how components handle errors together
+- **State Management**: Maintains and verifies system state across operations
+
+## Types of Integration Tests in Our Project
+
+### 1. CRUD Flow Tests
+Tests that verify complete Create, Read, Update operations work together.
+```python
+def test_create_read_update_flow():
+    # Create Pokemon
+    response = client.post("/pokemon/", json=new_pokemon)
+    assert response.status_code == 201
+    
+    # Read it back
+    get_response = client.get("/pokemon/1")
+    assert get_response.json()["name"] == new_pokemon["name"]
+```
+
+### 2. Data Persistence Tests
+Tests that verify data is correctly saved and retrieved from storage.
+```python
+def test_data_persistence():
+    # Create data
+    client.post("/pokemon/", json=new_pokemon)
+    
+    # Verify file contents
+    with open(test_db, "r") as f:
+        saved_data = json.load(f)
+    assert saved_data["pokemon"][0]["name"] == "Charmander"
+```
+
+### 3. Error Handling Flow Tests
+Tests that verify error handling across components.
+```python
+def test_error_handling_flow():
+    # Test non-existent resource
+    response = client.get("/pokemon/999")
+    assert response.status_code == 404
+    
+    # Test duplicate creation
+    response = client.post("/pokemon/", json=existing_pokemon)
+    assert response.status_code == 400
+```
+
+## Integration Test Patterns
+
+### Database Management
+Integration tests need careful database handling:
+```python
+@pytest.fixture(scope="session", autouse=True)
+def backup_restore_db():
+    """Backup real database and restore after tests"""
+    if os.path.exists("pokedex.json"):
+        shutil.copy("pokedex.json", "pokedex.json.backup")
+    yield
+    if os.path.exists("pokedex.json.backup"):
+        shutil.copy("pokedex.json.backup", "pokedex.json")
+```
+
+### Test Client Usage
+FastAPI's TestClient allows testing HTTP endpoints:
+```python
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+response = client.post("/pokemon/", json=pokemon_data)
+assert response.status_code == 201
+```
+
+### State Verification
+Testing state across operations:
+```python
+def test_evolution_chain_integrity():
+    # Create Pokemon with evolution
+    client.post("/pokemon/", json=pokemon_with_evolution)
+    
+    # Verify related Pokemon
+    response = client.get("/pokemon/1")
+    assert response.json()["next_evolution"][0]["name"] == "Ivysaur"
+```
+
+## Best Practices for Integration Tests
+
+1. **Test Database Isolation**
+   - Use separate test database
+   - Backup and restore production data
+   - Clean state between tests
+
+2. **Complete Workflows**
+   - Test entire features
+   - Verify all components interact correctly
+   - Check data persistence
+
+3. **Realistic Scenarios**
+   ```python
+   # Test real-world workflow
+   def test_complete_pokemon_lifecycle():
+       # Create
+       create_response = client.post("/pokemon/", json=new_pokemon)
+       
+       # Read
+       read_response = client.get(f"/pokemon/{pokemon_id}")
+       
+       # Update
+       update_response = client.patch(f"/pokemon/{pokemon_id}", 
+                                    json=updated_data)
+       
+       # Verify each step
+       assert create_response.status_code == 201
+       assert read_response.status_code == 200
+       assert update_response.status_code == 200
+   ```
+
+4. **Error Handling**
+   - Test system-wide error handling
+   - Verify error propagation
+   - Check error recovery
+
+5. **Resource Cleanup**
+   - Clean up test data
+   - Reset system state
+   - Restore initial conditions
