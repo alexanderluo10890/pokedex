@@ -307,3 +307,74 @@ def populated_db(test_db):
     import app.services.pokemon_service as pokemon_service
     pokemon_service.pokemon_list = initial_data["pokemon"]
     return test_db
+
+@pytest.fixture(scope="function")
+def e2e_test_db(monkeypatch):
+    """Setup test database for E2E tests with complete initial data"""
+    test_file = "e2e_test_pokedex.json"
+    
+    # Initial test data - complete Pokemon evolution chain
+    test_data = {
+        "pokemon": [
+            {
+                "id": 1,
+                "num": "001",
+                "name": "Bulbasaur",
+                "img": "http://www.serebii.net/pokemongo/pokemon/001.png",
+                "type": ["Grass", "Poison"],
+                "height": "0.71 m",
+                "weight": "6.9 kg",
+                "weaknesses": ["Fire", "Ice", "Flying", "Psychic"],
+                "next_evolution": [{"num": "002", "name": "Ivysaur"}]
+            },
+            {
+                "id": 2,
+                "num": "002",
+                "name": "Ivysaur",
+                "img": "http://www.serebii.net/pokemongo/pokemon/002.png",
+                "type": ["Grass", "Poison"],
+                "height": "0.99 m",
+                "weight": "13.0 kg",
+                "weaknesses": ["Fire", "Ice", "Flying", "Psychic"],
+                "prev_evolution": [{"num": "001", "name": "Bulbasaur"}],
+                "next_evolution": [{"num": "003", "name": "Venusaur"}]
+            },
+            {
+                "id": 3,
+                "num": "003",
+                "name": "Venusaur",
+                "img": "http://www.serebii.net/pokemongo/pokemon/003.png",
+                "type": ["Grass", "Poison"],
+                "height": "2.0 m",
+                "weight": "100.0 kg",
+                "weaknesses": ["Fire", "Ice", "Flying", "Psychic"],
+                "prev_evolution": [
+                    {"num": "001", "name": "Bulbasaur"},
+                    {"num": "002", "name": "Ivysaur"}
+                ]
+            }
+        ]
+    }
+    
+    
+    # Write test data
+    with open(test_file, "w") as f:
+        json.dump(test_data, f)
+    
+    # Patch service to use test database
+    import app.services.pokemon_service as pokemon_service
+    from app.utils.file_operations import save_pokemon_data
+    
+    # Reload data from test file
+    pokemon_service.pokemon_list = test_data["pokemon"]
+
+    # Patch the save function to use test file
+    def mock_save_data(data):
+        save_pokemon_data(data, test_file)
+    monkeypatch.setattr(pokemon_service, "save_pokemon_data", mock_save_data)
+    
+    yield test_file
+    
+    # Cleanup
+    if os.path.exists(test_file):
+        os.remove(test_file)
