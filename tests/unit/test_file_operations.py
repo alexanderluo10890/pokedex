@@ -43,16 +43,16 @@ def test_load_pokemon_data_file_not_found():
     data = load_pokemon_data(nonexistent_file)
     assert data == {"pokemon": []}
 
-def test_load_pokemon_data_invalid_json(test_db_file):
+def test_load_pokemon_data_invalid_json(test_db):
     """Test loading data from invalid JSON file"""
     # Write invalid JSON
-    with open(test_db_file, "w") as f:
+    with open(test_db, "w") as f:
         f.write("This is not valid JSON")
     
-    data = load_pokemon_data(test_db_file)
+    data = load_pokemon_data(test_db)
     assert data == {"pokemon": []}
 
-def test_save_pokemon_data_success(test_db_file):
+def test_save_pokemon_data_success(test_db):
     """Test successfully saving pokemon data"""
     test_data = [
         {
@@ -62,10 +62,10 @@ def test_save_pokemon_data_success(test_db_file):
         }
     ]
     
-    save_pokemon_data(test_data, test_db_file)
+    save_pokemon_data(test_data, test_db)
     
     # Verify data was saved correctly
-    with open(test_db_file, "r") as f:
+    with open(test_db, "r") as f:
         saved_data = json.load(f)
     
     assert "pokemon" in saved_data
@@ -92,10 +92,10 @@ def test_save_pokemon_data_creates_file():
         if os.path.exists(new_file):
             os.remove(new_file)
 
-def test_concurrent_file_access(test_db_file):
+def test_concurrent_file_access(test_db):
     """Test concurrent access to the file"""
     def save_operation(pokemon_data):
-        save_pokemon_data(pokemon_data, test_db_file)
+        save_pokemon_data(pokemon_data, test_db)
         time.sleep(0.1)  # Simulate some processing time
     
     # Create multiple threads to save data concurrently
@@ -114,18 +114,18 @@ def test_concurrent_file_access(test_db_file):
         thread.join()
     
     # Verify file integrity
-    with open(test_db_file, "r") as f:
+    with open(test_db, "r") as f:
         final_data = json.load(f)
     
     assert isinstance(final_data, dict)
     assert "pokemon" in final_data
     assert isinstance(final_data["pokemon"], list)
 
-def test_save_pokemon_data_with_evolution_chains(test_db_file, ivysaur_data):
+def test_save_pokemon_data_with_evolution_chains(test_db, ivysaur_data):
     """Test saving Pokemon with evolution chains"""
-    save_pokemon_data([ivysaur_data], test_db_file)
+    save_pokemon_data([ivysaur_data], test_db)
     
-    with open(test_db_file, "r") as f:
+    with open(test_db, "r") as f:
         saved_data = json.load(f)
     
     saved_pokemon = saved_data["pokemon"][0]
@@ -134,9 +134,9 @@ def test_save_pokemon_data_with_evolution_chains(test_db_file, ivysaur_data):
     assert saved_pokemon["prev_evolution"][0]["name"] == "Bulbasaur"
     assert saved_pokemon["next_evolution"][0]["name"] == "Venusaur"
 
-def test_empty_pokemon_list(test_db_file):
+def test_empty_pokemon_list(test_db):
     """Test saving and loading empty Pokemon list"""
-    save_pokemon_data([], test_db_file)
+    save_pokemon_data([], test_db)
     
-    data = load_pokemon_data(test_db_file)
+    data = load_pokemon_data(test_db)
     assert data == {"pokemon": []}
