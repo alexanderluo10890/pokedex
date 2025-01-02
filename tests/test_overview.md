@@ -305,3 +305,50 @@ def test_evolution_chain_integrity():
    - Clean up test data
    - Reset system state
    - Restore initial conditions
+
+## End-to-End (E2E) Testing
+
+### What are E2E Tests?
+E2E tests verify that all components of the application work together through complete user scenarios. They simulate real user interactions and validate entire workflows from start to finish.
+
+### Characteristics of Good E2E Tests
+- **Complete Workflows**: Tests entire features from start to finish
+- **Real Data Flow**: Verifies data moves correctly through all layers
+- **User Perspective**: Tests from the user's point of view
+- **System Integration**: Validates all components working together
+
+### Example E2E Test
+```python
+def test_complete_pokemon_lifecycle():
+    # Create new Pokemon
+    create_response = client.post("/pokemon/", json=new_pokemon)
+    
+    # Verify in database
+    with open(test_db, "r") as f:
+        saved_data = json.load(f)
+    
+    # Update evolution chain
+    update_response = client.patch(f"/pokemon/{id}", 
+                                 json=evolution_data)
+    
+    # Verify complete workflow
+    final_response = client.get(f"/pokemon/{id}")
+    assert final_response.json()["evolution"] == expected_data
+```
+
+### E2E Test Organization
+- Complete Evolution Chain Tests
+- Pokemon Lifecycle Tests
+- Data Consistency Tests
+
+### When to Use E2E Tests
+- Testing complete user workflows
+- Validating critical business paths
+- Verifying system integration
+- Testing data flow through all layers
+
+### E2E vs Integration Tests
+- E2E tests complete workflows
+- Integration tests focus on component interactions
+- E2E includes data persistence
+- E2E simulates real user scenarios
