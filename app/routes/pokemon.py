@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.models.pokemon import Pokemon, UpdatePokemon
-from app.services.pokemon_service import get_pokemon_by_id, add_new_pokemon, update_existing_pokemon
+from app.services.pokemon_service import get_pokemon_by_id, add_new_pokemon, update_existing_pokemon, delete_pokemon_by_id
 
 router = APIRouter()
 
@@ -29,6 +29,16 @@ def update_pokemon(id: int, updates: UpdatePokemon):
     """Route to update an existing Pokémon."""
     try:
         return update_existing_pokemon(id, updates)
+    except HTTPException as e:
+        raise e  # Rethrow known exceptions
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+
+@router.delete("/{id}", status_code=200)
+def delete_pokemon(id: int):
+    """Route to delete a Pokémon by ID."""
+    try:
+        return delete_pokemon_by_id(id)
     except HTTPException as e:
         raise e  # Rethrow known exceptions
     except Exception as e:

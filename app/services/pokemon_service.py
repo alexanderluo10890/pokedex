@@ -43,3 +43,16 @@ def update_existing_pokemon(id: int, updates: UpdatePokemon):
             save_pokemon_data(pokemon_list)
             return {"message": "Pokemon updated successfully", "pokemon": pokemon}
     raise HTTPException(status_code=404, detail="Pokemon not found")
+
+def delete_pokemon_by_id(id: int):
+    """Delete a Pokémon by its ID."""
+    try:
+        for pokemon in pokemon_list:
+            print(pokemon.get('id'))
+            if pokemon.get("id") == id:
+                pokemon_list.remove(pokemon)
+                save_pokemon_data(pokemon_list)
+                return {"message": f"Pokemon with ID {id} deleted successfully."}
+        raise HTTPException(status_code=404, detail="Pokemon not found")
+    except HTTPException as e:
+        raise HTTPException(status_code=404, detail=f"Error adding Pokémon: {str(e)}")
