@@ -1,6 +1,32 @@
 {
     "pokemon": [
         {
+            "id": 0,
+            "num": "001",
+            "name": "Bulbasaur",
+            "img": "string",
+            "type": [
+                "string"
+            ],
+            "height": "string",
+            "weight": "string",
+            "weaknesses": [
+                "string"
+            ],
+            "prev_evolution": [
+                {
+                    "num": "string",
+                    "name": "string"
+                }
+            ],
+            "next_evolution": [
+                {
+                    "num": "string",
+                    "name": "string"
+                }
+            ]
+        },
+        {
             "id": 1,
             "num": "001",
             "name": "Bulbasaur",
@@ -25,6 +51,12 @@
                 {
                     "num": "003",
                     "name": "Venusaur"
+                }
+            ],
+            "prev_evolution": [
+                {
+                    "num": "string",
+                    "name": "string"
                 }
             ]
         },

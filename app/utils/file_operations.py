@@ -4,23 +4,23 @@ import logging
 
 lock = threading.Lock()
 
-def load_pokemon_data():
+def load_pokemon_data(filename: str = "pokedex.json"):
     """Load Pokémon data from the JSON file."""
     try:
-        with open("pokedex.json", "r") as file:
+        with open(filename, "r") as file:
             return json.load(file)
     except FileNotFoundError:
-        logging.error("Pokedex file not found. Returning empty data.")
+        logging.error(f"Pokemon file {filename} not found. Returning empty data.")
         return {"pokemon": []}
     except json.JSONDecodeError:
-        logging.error("Malformed JSON in pokedex.json. Returning empty data.")
+        logging.error(f"Malformed JSON in {filename}. Returning empty data.")
         return {"pokemon": []}
 
-def save_pokemon_data(data):
+def save_pokemon_data(data, filename: str = "pokedex.json"):
     """Save Pokémon data to the JSON file."""
     with lock:
         try:
-            with open("pokedex.json", "w") as file:
+            with open(filename, "w") as file:
                 json.dump({"pokemon": data}, file, indent=4)
         except Exception as e:
             logging.error(f"Failed to save data: {e}")
