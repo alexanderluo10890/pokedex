@@ -1,7 +1,9 @@
 import pytest
 from fastapi import HTTPException
-from app.services.pokemon_service import get_pokemon_by_id, add_new_pokemon, update_existing_pokemon
+from app.services.pokemon_service import get_pokemon_by_id, add_new_pokemon, update_existing_pokemon, delete_pokemon_by_id
 from app.models.pokemon import Pokemon, UpdatePokemon, Evolution
+import app.services.pokemon_service as pokemon_service
+import threading
 
 def test_get_pokemon_by_id_success(mock_db_with_all_variants, monkeypatch):
     """Test successfully getting different types of Pokemon"""
@@ -170,3 +172,94 @@ def test_update_nonexistent_pokemon(mock_db_with_all_variants, monkeypatch):
     with pytest.raises(HTTPException) as exc_info:
         update_existing_pokemon(999, updates)
     assert exc_info.value.status_code == 404
+
+def test_delete_pokemon_by_id_success(mock_db_with_all_variants, monkeypatch):
+    """Test successfully deleting a Pokémon by ID"""
+    test_list = mock_db_with_all_variants["pokemon"].copy()
+    monkeypatch.setattr(pokemon_service, "pokemon_list", test_list)
+    
+    # Mock save_pokemon_data to do nothing
+    monkeypatch.setattr("app.services.pokemon_service.save_pokemon_data", lambda x: None)
+    
+    result = delete_pokemon_by_id(1)  # Delete Bulbasaur
+    assert result["message"] == "Pokemon with ID 1 deleted successfully."
+    assert not any(p["id"] == 1 for p in test_list)  # Ensure it's deleted
+
+
+def test_delete_nonexistent_pokemon(mock_db_with_all_variants, monkeypatch):
+    """Test attempting to delete a non-existent Pokémon"""
+    import app.services.pokemon_service as pokemon_service
+    test_list = mock_db_with_all_variants["pokemon"].copy()
+    monkeypatch.setattr(pokemon_service, "pokemon_list", test_list)
+    
+    # Mock save_pokemon_data to do nothing
+    monkeypatch.setattr("app.services.pokemon_service.save_pokemon_data", lambda x: None)
+    
+    with pytest.raises(HTTPException) as exc_info:
+        delete_pokemon_by_id(999)  # Non-existent ID
+    assert exc_info.value.status_code == 404
+    assert "Pokemon not found" in str(exc_info.value.detail)
+
+
+def test_delete_pokemon_list_integrity(mock_db_with_all_variants, monkeypatch):
+    """Test integrity of list after deletion"""
+    import app.services.pokemon_service as pokemon_service
+    test_list = mock_db_with_all_variants["pokemon"].copy()
+    monkeypatch.setattr(pokemon_service, "pokemon_list", test_list)
+    
+    # Mock save_pokemon_data to do nothing
+    monkeypatch.setattr("app.services.pokemon_service.save_pokemon_data", lambda x: None)
+    
+    delete_pokemon_by_id(1)  # Delete Bulbasaur
+    remaining_ids = {p["id"] for p in test_list}
+    
+    assert 1 not in remaining_ids  # Ensure the deleted Pokémon is gone
+    assert len(remaining_ids) == len(mock_db_with_all_variants["pokemon"]) - 1  # Ensure one Pokémon is removed
+
+
+def test_delete_pokemon_with_evolutions(mock_db_with_all_variants, monkeypatch):
+    """Test deleting a Pokémon with evolution data"""
+    import app.services.pokemon_service as pokemon_service
+    test_list = mock_db_with_all_variants["pokemon"].copy()
+    monkeypatch.setattr(pokemon_service, "pokemon_list", test_list)
+    
+    # Mock save_pokemon_data to do nothing
+    monkeypatch.setattr("app.services.pokemon_service.save_pokemon_data", lambda x: None)
+    
+    result = delete_pokemon_by_id(134)  # Delete Vaporeon
+    assert result["message"] == "Pokemon with ID 134 deleted successfully."
+    assert not any(p["id"] == 134 for p in test_list)  # Ensure it's deleted
+
+    # Ensure evolutions are not affected in other Pokémon (if applicable)
+
+
+def test_delete_pokemon_concurrent_access(mock_db_with_all_variants, monkeypatch):
+    """Test deleting Pokémon with concurrent access to the list"""
+    test_list = mock_db_with_all_variants["pokemon"].copy()
+    monkeypatch.setattr(pokemon_service, "pokemon_list", test_list)
+    
+    # Mock save_pokemon_data to do nothing
+    monkeypatch.setattr("app.services.pokemon_service.save_pokemon_data", lambda x: None)
+    
+    def delete_op(pokemon_id):
+        try:
+            delete_pokemon_by_id(pokemon_id)
+        except HTTPException:
+            pass
+    
+    # Create threads for concurrent deletion
+    pokemon_ids_to_delete = [1, 2, 3]  # Adjust based on test data
+    threads = [
+        threading.Thread(target=delete_op, args=(pokemon_id,))
+        for pokemon_id in pokemon_ids_to_delete
+    ]
+    
+    for thread in threads:
+        thread.start()
+    
+    for thread in threads:
+        thread.join()
+    
+    remaining_ids = {p["id"] for p in test_list}
+    for pokemon_id in pokemon_ids_to_delete:
+        assert pokemon_id not in remaining_ids  # Ensure deleted Pokémon are gone
