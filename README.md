@@ -153,6 +153,8 @@ This project is designed to:
 
 MIT License – feel free to use and modify.
 
+to run tests:-m pytest test_main.py -v
+
 ---
 
 How to run file locally: uv run uvicorn main:app --reload
