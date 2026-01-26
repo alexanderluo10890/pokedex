@@ -14,24 +14,31 @@ logging.basicConfig(level=logging.INFO)
 # Thread lock for concurrency safety
 lock = threading.Lock()
 
+# Global variable to store the JSON file path
+DATA_FILE = "pokedex.json"
+
 # Function to load Pokémon data from JSON file
-def load_pokemon_data() -> List[dict]:
-    # if not os.path.exists("pokedex.json"):
-    #     # Create an empty JSON file if it doesn't exist
-    #     with open("pokedex.json", "w") as file:
-    #         json.dump([], file)
+def load_pokemon_data(file_path: str = None) -> List[dict]:
+    if file_path is None:
+        file_path = DATA_FILE
     try:
-        with open("pokedex.json", "r") as file:
-            return json.load(file)
+        with open(file_path, "r") as file:
+            data = json.load(file)
+            return data.get('pokemon', [])
     except json.JSONDecodeError:
-        logging.error("Failed to decode JSON from 'pokedex.json'")
+        logging.error(f"Failed to decode JSON from '{file_path}'")
+        return []
+    except FileNotFoundError:
+        logging.error(f"File '{file_path}' not found")
         return []
 
 # Function to save Pokémon data to JSON file
-def save_pokemon_data(data: List[dict]):
+def save_pokemon_data(data: List[dict], file_path: str = None):
+    if file_path is None:
+        file_path = DATA_FILE
     try:
         with lock:  # Ensure thread safety
-            with open("pokedex.json", "w") as file:
+            with open(file_path, "w") as file:
                 json_data = {"pokemon": data}
                 json.dump(json_data, file, indent=4)
     except Exception as e:
@@ -39,7 +46,7 @@ def save_pokemon_data(data: List[dict]):
         raise HTTPException(status_code=500, detail=f"Failed to save data: {str(e)}")
 
 # Load Pokémon data at startup
-pokemon_list = load_pokemon_data()['pokemon'] # type: ignore
+pokemon_list = load_pokemon_data()
 
 # Models
 class Pokemon(BaseModel):
@@ -65,8 +72,7 @@ def root():
 # Fetch Pokémon by ID
 @app.get("/pokemon/{id}")
 def get_pokemon(id: int):
-    # print(pokemon_list)
-    for pokemon in pokemon_list: # type: ignore
+    for pokemon in pokemon_list:
         if pokemon['id'] == id:
             return pokemon
     raise HTTPException(status_code=404, detail="Pokemon not found")
@@ -75,12 +81,11 @@ def get_pokemon(id: int):
 @app.post("/pokemon", status_code=201)
 def add_pokemon(pokemon: Pokemon):
     for p in pokemon_list:
-      if p["id"] == pokemon.id: # type: ignore
-        raise HTTPException(status_code=400, detail="Pokemon with this ID already exists")
+        if p["id"] == pokemon.id:
+            raise HTTPException(status_code=400, detail="Pokemon with this ID already exists")
     
-    pokemon_list.append(pokemon.dict()) # type: ignore
-
-    pokemon_list.sort(key=lambda x: x["id"]) #lambda function
+    pokemon_list.append(pokemon.dict())
+    pokemon_list.sort(key=lambda x: x["id"])
 
     save_pokemon_data(pokemon_list)
     return pokemon_list
@@ -88,7 +93,7 @@ def add_pokemon(pokemon: Pokemon):
 # Update a Pokémon
 @app.patch("/pokemon/{id}")
 def update_pokemon(id: int, updates: UpdatePokemon):
-    for pokemon in pokemon_list: # type: ignore
+    for pokemon in pokemon_list:
         if pokemon["id"] == id:
             if updates.name:
                 pokemon["name"] = updates.name
