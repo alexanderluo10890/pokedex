@@ -1,96 +1,87 @@
-# 🐱‍👤 Pokedex API
+# Pokedex API
 
-A simple **RESTful API** built with **FastAPI** that allows you to create, read, and update Pokémon data. The project uses **Pydantic** for data validation and a **JSON file** as lightweight storage, making it perfect for learning how FastAPI works under the hood.
+A **RESTful API** built with **FastAPI** that lets you create, read, and update Pokémon data. Uses **Pydantic** for validation and a **JSON file** as lightweight storage — built to learn how FastAPI works under the hood.
 
----
-
-## 🚀 Features
-
-* 🔍 Fetch Pokémon by ID
-* ➕ Add new Pokémon
-* ✏️ Update existing Pokémon (partial updates)
-* ✅ Automatic request validation with Pydantic
-* 🧵 Thread-safe file writes using locks
-* 📄 JSON-based persistence (no database required)
+![Python](https://img.shields.io/badge/Python-3.9+-blue?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green?logo=fastapi&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
 
-## 🛠 Tech Stack
+## Features
 
-* **Python 3.9+**
-* **FastAPI** – API framework
-* **Pydantic** – data validation & parsing
-* **Uvicorn** – ASGI server
-* **JSON** – data storage
+- Fetch Pokémon by ID
+- Add new Pokémon with automatic duplicate rejection
+- Partial updates via PATCH (name, type, or both)
+- Automatic request validation with Pydantic
+- Thread-safe file writes using locks
+- JSON-based persistence — no database required
 
 ---
 
-## 📂 Project Structure
+## Tech Stack
+
+| Tool | Purpose |
+|------|---------|
+| Python 3.9+ | Language |
+| FastAPI | API framework |
+| Pydantic | Data validation & parsing |
+| Uvicorn | ASGI server |
+| pytest | Testing |
+| JSON | Data storage |
+
+---
+
+## Project Structure
 
 ```
 .
-├── main.py          # FastAPI application
-├── pokedex.json    # Pokémon data storage
-├── README.md       # Project documentation
+├── main.py          # FastAPI app & endpoints
+├── test_main.py     # pytest test suite
+├── pokedex.json     # Pokémon data storage
+└── README.md
 ```
 
 ---
 
-## ▶️ Getting Started
+## Getting Started
 
-### 1️⃣ Install dependencies
+### Install dependencies
 
 ```bash
 pip install fastapi uvicorn
 ```
 
-### 2️⃣ Run the server
+### Run the server
 
 ```bash
 uvicorn main:app --reload
 ```
 
-Server will start at:
+Or with `uv`:
 
+```bash
+uv run uvicorn main:app --reload
 ```
-http://127.0.0.1:8000
-```
+
+Server runs at `http://127.0.0.1:8000` — visit `/docs` for the interactive Swagger UI.
 
 ---
 
-## 📘 API Endpoints
+## API Endpoints
 
-### 🔹 Root
-
-```http
-GET /
-```
-
+### GET /
 Returns a welcome message.
 
----
-
-### 🔹 Get Pokémon by ID
-
-```http
-GET /pokemon/{id}
-```
-
-Example:
+### GET /pokemon/{id}
+Fetch a Pokémon by ID.
 
 ```bash
 curl http://127.0.0.1:8000/pokemon/6
 ```
 
----
-
-### 🔹 Add a Pokémon
-
-```http
-POST /pokemon
-```
-
-Request body:
+### POST /pokemon
+Add a new Pokémon. Returns 201 on success, 400 if the ID already exists.
 
 ```json
 {
@@ -100,18 +91,8 @@ Request body:
 }
 ```
 
-* Returns **201 Created** on success
-* Rejects duplicate IDs automatically
-
----
-
-### 🔹 Update a Pokémon
-
-```http
-PATCH /pokemon/{id}
-```
-
-Request body (partial update supported):
+### PATCH /pokemon/{id}
+Partial update — send only the fields you want to change.
 
 ```json
 {
@@ -121,41 +102,43 @@ Request body (partial update supported):
 
 ---
 
-## 🧠 How It Works
+## Testing
 
-* **FastAPI** inspects function signatures and type hints
-* **Pydantic models** validate and parse incoming JSON
-* Path parameters come from the URL (e.g. `/pokemon/6`)
-* Request bodies are converted into Python objects
-* Data is stored in memory and synced to `pokedex.json`
+```bash
+pytest test_main.py
+```
 
----
-
-## ⚠️ Notes & Limitations
-
-* JSON file storage is not ideal for large-scale apps
-* Data resets if the file is deleted or corrupted
-* Intended for learning & small projects
+Tests cover all endpoints, validation errors, duplicate ID rejection, sort order after inserts, and data persistence helpers.
 
 ---
 
-## ✨ Why This Project
+## How It Works
 
-This project is designed to:
-
-* Learn **FastAPI request lifecycle**
-* Understand **Pydantic validation**
-* Practice building clean REST APIs
-
----
-
-## 📜 License
-
-MIT License – feel free to use and modify.
+- FastAPI inspects function signatures and type hints to build routes automatically
+- Pydantic models validate and parse incoming JSON before it hits your handler
+- A threading lock wraps all file writes to prevent race conditions
+- The in-memory list stays sorted by ID after every insert
 
 ---
 
-How to run file locally: uv run uvicorn main:app --reload
-go to local host then add /docs to test the api
+## What I Learned
 
-Happy hacking! 🚀
+- How FastAPI uses type hints to handle routing, validation, and docs generation with minimal boilerplate
+- How Pydantic models enforce schema at the boundary so the rest of the code can trust the data
+- Why thread locks matter even in small projects — file writes are not atomic
+- How to structure pytest fixtures for setup/teardown without leaking test data
+
+---
+
+## Potential Improvements
+
+- Swap JSON storage for SQLite or PostgreSQL for real persistence
+- Add a `GET /pokemon` endpoint to list all Pokémon with pagination
+- Add `DELETE /pokemon/{id}`
+- Dockerize the app for easier deployment
+
+---
+
+## License
+
+MIT — feel free to use and modify.
