@@ -137,6 +137,8 @@ Tests cover all endpoints, validation errors, duplicate ID rejection, sort order
 - Add `DELETE /pokemon/{id}`
 - Dockerize the app for easier deployment
 
+to run tests:-m pytest test_main.py -v
+
 ---
 
 ## License
